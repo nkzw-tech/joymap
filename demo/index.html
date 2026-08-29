@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#070b1d" />
+    <meta
+      name="description"
+      content="A live gamepad demo for Joymap, the modern browser Gamepad API wrapper."
+    />
+    <title>Signal Strike · Joymap Demo</title>
+  </head>
+  <body>
+    <div class="page-glow"></div>
+    <main class="shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow squircle">Joymap v5 demo</span>
+          <h1>Defend the last signal.</h1>
+          <p>
+            Connect a standard gamepad and press any button. Signal Strike reads it through Joymap,
+            mirrors it below, and turns it into an arcade control.
+          </p>
+        </div>
+        <div class="connection squircle" id="connection">
+          <span class="connection-dot"></span>
+          <span id="connection-label">Waiting for a gamepad</span>
+        </div>
+      </header>
+
+      <div class="demo-grid">
+        <section class="card game-card squircle" aria-labelledby="game-title">
+          <div class="card-header game-header">
+            <div>
+              <span class="section-kicker">Arcade test</span>
+              <h2 id="game-title">Signal Strike</h2>
+            </div>
+            <div class="scoreboard" aria-live="polite">
+              <div><span>Score</span><strong id="score">000000</strong></div>
+              <div><span>Wave</span><strong id="wave">01</strong></div>
+              <div><span>Lives</span><strong id="lives">● ● ●</strong></div>
+            </div>
+          </div>
+
+          <div class="screen squircle">
+            <canvas id="game" width="960" height="600" aria-label="Signal Strike game"></canvas>
+            <div class="screen-status squircle" id="screen-status">Keyboard mode</div>
+          </div>
+
+          <div class="abilities">
+            <div class="ability"><kbd>A</kbd><span>Fire</span></div>
+            <div class="ability"><kbd>B</kbd><span>Dash</span></div>
+            <div class="ability"><kbd>X</kbd><span>Shield</span></div>
+            <div class="ability"><kbd>Y</kbd><span>Pulse</span></div>
+            <div class="ability wide"><kbd>☰</kbd><span>Pause</span></div>
+          </div>
+        </section>
+
+        <aside class="card controller-card squircle" aria-labelledby="controller-title">
+          <div class="card-header">
+            <div>
+              <span class="section-kicker">Live input</span>
+              <h2 id="controller-title">Virtual gamepad</h2>
+            </div>
+            <span class="poll-rate squircle"><span id="poll-rate">60</span> Hz</span>
+          </div>
+
+          <div class="gamepad-shell" id="virtual-gamepad">
+            <div class="shoulders shoulders-left">
+              <button class="control shoulder trigger" data-input="L2" type="button">
+                <span class="trigger-fill"></span><span>L2</span>
+              </button>
+              <button class="control shoulder" data-input="L1" type="button">L1</button>
+            </div>
+            <div class="shoulders shoulders-right">
+              <button class="control shoulder trigger" data-input="R2" type="button">
+                <span class="trigger-fill"></span><span>R2</span>
+              </button>
+              <button class="control shoulder" data-input="R1" type="button">R1</button>
+            </div>
+
+            <div class="gamepad-body squircle">
+              <div class="dpad" aria-label="Directional pad">
+                <button
+                  aria-label="D-pad up"
+                  class="control dpad-button dpad-up"
+                  data-input="dpadUp"
+                  type="button"
+                >
+                  ▲
+                </button>
+                <button
+                  aria-label="D-pad left"
+                  class="control dpad-button dpad-left"
+                  data-input="dpadLeft"
+                  type="button"
+                >
+                  ◀
+                </button>
+                <span class="dpad-center"></span>
+                <button
+                  aria-label="D-pad right"
+                  class="control dpad-button dpad-right"
+                  data-input="dpadRight"
+                  type="button"
+                >
+                  ▶
+                </button>
+                <button
+                  aria-label="D-pad down"
+                  class="control dpad-button dpad-down"
+                  data-input="dpadDown"
+                  type="button"
+                >
+                  ▼
+                </button>
+              </div>
+
+              <div class="center-buttons">
+                <button
+                  aria-label="Select"
+                  class="control utility"
+                  data-input="select"
+                  type="button"
+                >
+                  −
+                </button>
+                <button aria-label="Home" class="control home" data-input="home" type="button">
+                  J
+                </button>
+                <button aria-label="Start" class="control utility" data-input="start" type="button">
+                  +
+                </button>
+              </div>
+
+              <div class="face-buttons" aria-label="Face buttons">
+                <button class="control face face-y" data-input="Y" type="button">Y</button>
+                <button class="control face face-x" data-input="X" type="button">X</button>
+                <button class="control face face-b" data-input="B" type="button">B</button>
+                <button class="control face face-a" data-input="A" type="button">A</button>
+              </div>
+
+              <button
+                class="control stick stick-left"
+                data-input="L3"
+                type="button"
+                aria-label="Left stick"
+              >
+                <span class="stick-knob"><span class="stick-rings"></span></span>
+                <span class="stick-label">L3</span>
+              </button>
+              <button
+                class="control stick stick-right"
+                data-input="R3"
+                type="button"
+                aria-label="Right stick"
+              >
+                <span class="stick-knob"><span class="stick-rings"></span></span>
+                <span class="stick-label">R3</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="telemetry">
+            <div>
+              <span>Left stick</span>
+              <strong id="left-stick-value">0.00 / 0.00</strong>
+            </div>
+            <div>
+              <span>Right stick</span>
+              <strong id="right-stick-value">0.00 / 0.00</strong>
+            </div>
+            <div>
+              <span>Last input</span>
+              <strong id="last-input">—</strong>
+            </div>
+            <div>
+              <span>Shield</span>
+              <strong id="shield-value">100%</strong>
+            </div>
+          </div>
+
+          <p class="controller-note">
+            No controller? Use <strong>WASD / arrows</strong>, <strong>Space</strong>,
+            <strong>Shift</strong>, <strong>U</strong>, and <strong>I</strong>—or click the
+            controls.
+          </p>
+        </aside>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

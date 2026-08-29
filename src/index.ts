@@ -1,18 +1,35 @@
-import createBaseModule, { BaseModule } from './baseModule/base.ts';
-import createJoymap, { AnyModule, Joymap } from './JoyMap.ts';
-import createQueryModule, {
-  Mapper,
-  MapperResult,
-  QueryModule,
-} from './queryModule/query.ts';
+import createController, { Controller, isJustPressed, isJustReleased } from './controller.ts';
+import createJoymap, { Joymap } from './JoyMap.ts';
+import {
+  Button,
+  ButtonResult,
+  ControllerOptions,
+  CustomGamepad,
+  Effect,
+  EffectObject,
+  GamepadSnapshots,
+  InputResult,
+  JoymapOptions,
+  RawGamepad,
+  Stick,
+  StickResult,
+} from './types.ts';
 
-export { createBaseModule, createQueryModule, createJoymap };
+export { createController, createJoymap, isJustPressed, isJustReleased };
 
 export type {
-  BaseModule,
-  QueryModule,
-  Mapper,
-  MapperResult,
-  AnyModule,
+  Button,
+  ButtonResult,
+  Controller,
+  ControllerOptions,
+  CustomGamepad,
+  Effect,
+  EffectObject,
+  GamepadSnapshots,
+  InputResult,
   Joymap,
+  JoymapOptions,
+  RawGamepad,
+  Stick,
+  StickResult,
 };

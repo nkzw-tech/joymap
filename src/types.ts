@@ -1,6 +1,9 @@
-export type Button = Array<number>;
+export type Button = ReadonlyArray<number>;
 
-export type Stick = { indexes: Array<Array<number>>; inverts: Array<boolean> };
+export type Stick = {
+  indexes: ReadonlyArray<ReadonlyArray<number>>;
+  inverts: ReadonlyArray<boolean>;
+};
 
 export interface ButtonResult {
   justChanged: boolean;
@@ -10,7 +13,7 @@ export interface ButtonResult {
 }
 
 export interface StickResult {
-  inverts: Array<boolean>;
+  inverts: ReadonlyArray<boolean>;
   justChanged: boolean;
   pressed: boolean;
   type: 'stick';
@@ -24,27 +27,43 @@ export type RawGamepad = Gamepad;
 export type CustomGamepad = {
   axes: ReadonlyArray<number>;
   buttons: Array<number>;
+  pressedButtons: Array<boolean>;
   rawPad?: RawGamepad;
+};
+
+export type GamepadSnapshots = {
+  current: CustomGamepad;
+  previous: CustomGamepad;
 };
 
 export interface JoymapOptions {
   autoConnect?: boolean;
-  onPoll: () => void;
+  onPoll?: () => void;
 }
 
-export interface BaseParams {
+export interface ControllerOptions {
+  buttonReleaseThreshold?: number;
+  buttonThreshold?: number;
   clampThreshold?: boolean;
-  padId?: string;
-  threshold?: number;
+  gamepadIndex?: number;
+  rescaleSticks?: boolean;
+  stickDeadzone?: number;
+  stickReleaseDeadzone?: number;
 }
 
-export type Effect =
-  | number
-  | {
-      duration: number;
-      strongMagnitude?: number;
-      weakMagnitude?: number;
-    };
+export type PressState = {
+  current: boolean;
+  previous: boolean;
+  threshold: number;
+};
+
+export interface EffectObject {
+  duration: number;
+  strongMagnitude?: number;
+  weakMagnitude?: number;
+}
+
+export type Effect = number | EffectObject;
 
 // StrictEffect means all values are valid (duration > 0, magnitudes between 0 and 1)
 export interface StrictEffect {
@@ -62,19 +81,4 @@ export interface ListenOptions {
   targetValue: number;
   type: 'buttons' | 'axes';
   useTimeStamp: boolean;
-}
-
-export interface InputToken {
-  inputName: string;
-  inputState: 'justPressed' | 'justReleased' | 'pressed' | 'released';
-}
-
-export type OperatorToken = string;
-
-export type EventToken = InputToken | OperatorToken;
-
-export interface InputEvent {
-  callback: (button: Array<InputResult>) => void;
-  name: string;
-  tokens: Array<EventToken>;
 }

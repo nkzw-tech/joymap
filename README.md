@@ -1,141 +1,427 @@
-# JOYMAP
+# Joymap
 
-A Javascript Gamepad browser API wrapper that chops, slices and dices
+**Joymap** is a modern browser Gamepad API wrapper and input mapping library. It provides deterministic polling, controller assignment, button and stick mappings, press and release transitions, rebinding helpers, and rumble support through a small TypeScript API.
 
-## Table of contents
+### Features
 
-**[Key features](#key-features)** |
-**[How to install](#how-to-install)** |
-**[Examples](#examples)** |
-**[How to use](#how-to-use)** |
-**[Modules](#modules)** |
-**[Simple example of usage](#simple-example-of-usage)** |
-**[Rumble support](#rumble-support)** |
-**[Naming restrictions](#naming-restrictions)** |
-**[Roadmap](#roadmap)**
+- **Game-loop friendly:** Poll input exactly where your game needs it, or let Joymap run its own `requestAnimationFrame` loop.
+- **Flexible mappings:** Give physical buttons and sticks logical names, combine inputs, and rebind them at runtime.
+- **Responsive controls:** Read analog values and input transitions with configurable thresholds, deadzones, hysteresis, and clamping.
+- **Multiple controllers:** Support identical devices by `Gamepad.index`, with shared snapshots for efficient polling.
 
-### Key features
+### Input without a DSL
 
-- Wraps the bare-bones gamepad standard into a flexible and more powerful API
-- Organizes inputs and configurations by modules instead of by gamepad
-- Modules can be query-based, event-based or Rx-based
-- Supports button/stick mapping and remapping
-- Supports user-oriented rebinding methods
-- [Lots of handy examples](https://diegodoumecq.github.io/joymap/)
-- Button bindings are set by default to the standard defined by the spec, but all possible inputs are supported
-- Can group buttons together (create a `'Jump'` button from the A, B, L1 and R1 inputs)
-- Can group sticks together (create one Analog stick from the average of L and R)
-- Provides event selectors with the event module, for example: `L1.justPressed && L.released && (A || B || customButton)`
-- Supports Chrome's implementation of rumble/haptic feedback
-- Uses and exports Typescript types
+The browser Gamepad API exposes sampled state rather than semantic events. Joymap follows that model: poll once at the beginning of an update, then read the controller state your game needs. There is no event expression language, observable layer, or hidden scheduler.
 
-### How to install
+Your application remains responsible for translating physical input into game actions. This keeps focus handling, input repetition, menus, gameplay rules, and other domain behavior in the application where they belong.
 
-You can install it with npm/yarn or just add a `<script>` tag with the joymap.min.js file and access the library through the joymap global var. For example using the unpkg cdn: `<script src="http://unpkg.com/joymap/bin/joymap.min.js"></script>`
+```ts
+joymap.poll();
 
-### Examples
-
-- You can play with our examples here: https://diegodoumecq.github.io/joymap/ (includes handy links to codesandbox and the github source code)
-- Alternatively, you can also clone/download the repo and after installing dependencies use **yarn dev** to mount it all on localhost:9001
-
-### How to use
-
-Joymap exports an object with a few creation functions:
-
-- createJoymap
-- createBaseModule
-- createQueryModule
-- createStreamModule
-- createEventModule
-
-From among them, the initial point of interaction with the library is **createJoymap**. It is necessary to use this function since it handles polling the browser's Gamepad API and passes that data along to the different assigned modules. It does not, however, parse or map anything by itself: the modules are the ones that handle that responsibility.
-
-- **createJoymap(params?: Object) => Joymap** takes a single optional argument in the form of an object with the following possible values:
-  - **onPoll** is a function that will be called at the end of each polling
-  - **autoConnect** is a boolean that if true, will connect all newly created Modules with an unused gamepad if present at the moment of module creation
-- When **createJoymap** gets called, it returns an instance of Joymap that has a bunch of functions:
-  - **start() => void** repeatedly calls **poll()** using requestAnimationFrame
-  - **stop() => void** stops calling **poll()**
-  - **getGamepads() => Gamepad[]** returns all the available gamepads encountered since the last poll
-  - **getModules() => AnyModule[]** returns an array of Modules (see the Modules section for more details)
-  - **getUnusedPadIds() => string[]** Returns an array of Gamepad ids that are not currently assigned to a Module
-  - **getUnusedPadId() => string | undefined** Same as above but returns only one if present
-  - **addModule(module: AnyModule) => void** Adds an instanced module to Joymap's Module array so that it can receive Joymap updates
-  - **removeModule(module: AnyModule) => void** Removes an instanced module from Joymap's Module array
-  - **clearModules() => void** Removes all modules from Joymap's Module array
-  - **poll() => void** Polls the browser gamepad API and updates all Modules with the data. Can be called manually or indirectly by using **start** and **stop**
-
-The other functions are used to create ...
-
-### Modules
-
-Joymap's gamepad-accessing API is divided into modules. Each of these implement a basic interface but differ in the way that the input information can be extracted. Three of these modules are implemented for now: QueryModule, StreamModule and EventModule.
-
-The three modules mentioned above work in similar ways, taking an options argument and returning the corresponding module. All of these use the createBaseModule function as a basis to build on top of it.
-
-- **create[type]Module(params?: Object) => module** returns a module and takes a single optional argument in the form of an object with the following possible values:
-  - **threshold?: number** is the number between 0 and 1 that is used for all inputs as the minimum value required to be considered as pressed. Default is 0.2
-  - **clampThreshold?: boolean** is a boolean that if true, will set all not pressed inputs to 0. Default is true
-  - **padId?: string** is the gamepad's Id that will be received on each **update** call. Default is null
-
-### Simple example of usage
-
-```javascript
-import createJoymap, { createQueryModule } from 'joymap';
-
-function stepFunction() {
-  // do stuff immediately after each Gamepad Poll
-}
-
-const joymap = createJoymap({
-  onPoll: stepFunction,
-  autoConnect: true,
-});
-const module1 = createQueryModule({ threshold: 0.2, clampThreshold: true });
-const module2 = createQueryModule({ threshold: 0.2, clampThreshold: true });
-const module3 = createQueryModule({ threshold: 0.2, clampThreshold: true });
-
-joymap.addModule(module1);
-joymap.addModule(module2);
-joymap.addModule(module3);
-joymap.start();
-
-//////
-// ... later on in a player-handling file
-//////
-
-const AButton = mario.module.getButton('A'); // mario.module could be module1 from above
-if (AButton.pressed && AButton.justChanged && mario.isOnFloor()) {
-  mario.jump();
+const accept = player.getButton('A');
+if (isJustPressed(accept)) {
+  openSelectedItem();
 }
 ```
 
-As you can see in the example above, you can create as many modules as you'd like. Each of them will be automatically assigned a gamepad if available (because we passed autoConnect: true) and each of them will stay assigned to that same gamepad even when plugged and unplugged multiple times.
+## Getting Started
 
-For more a in-depth view on what the modules support and how, do please look at the examples.
+Install Joymap with pnpm:
 
-### Rumble support
+```bash
+pnpm add @nkzw/joymap
+```
 
-Right now the library offers rumble suport based on Chrome's implementation of the Gamepad's **vibrationActuator.playEffect** function. To use this feature you can simply access any module and use the following methods:
+Create a Joymap instance and one controller per local player:
 
-Note: An _Effect_ is an object of type _{ duration: number; weakMagnitude?: number; strongMagnitude?: number; }_
+```ts
+import { createController, createJoymap, isJustPressed } from '@nkzw/joymap';
 
-- **isRumbleSupported(rawPad?: RawGamepad) => boolean | null** gives you whether the module's gamepad (or the one being passed as argument) supports rumble or not. Will return null only if called without arguments and no gamepad has been assigned to the module.
-- **addRumble(effect: Effect | (Effect | number)[], channelName?: string) => void** lets you play a single effect or a timeline of different effects and pauses. The channelName is used to distinguish from various sources of rumbling, so they don't cancel each other. If a channelName is not provided then the 'default' channel is used.
-- **stopRumble(channelName?: string) => void** lets you stop all rumbling from a particular channel. If a channelName is not provided then the 'default' channel is used.
+const player1 = createController();
+const player2 = createController();
 
-### Naming restrictions
+const joymap = createJoymap({ autoConnect: true });
+joymap.addController(player1);
+joymap.addController(player2);
 
-Throughout the library you're invited to name things. Like events, buttons, sticks and mappers. For the sake of making things easier for everybody in the future, these values shall only be alphanumeric. Why? Future-proofing mostly. For example, the event handling system requires this to avoid mixing up names of stuff with possible operators in the future.
+function update() {
+  joymap.poll();
 
-### Roadmap
+  const accept = player1.getButton('A');
+  if (isJustPressed(accept)) {
+    console.log('Player 1 pressed A');
+  }
 
-Stuff to do. Keep in mind these bullet points are in no particular order.
+  const movement = player1.getStick('L');
+  if (movement.pressed) {
+    movePlayer(movement.value[0], movement.value[1]);
+  }
 
-- Improve event module: add more event operators
-- Separate the examples into its own repo (or use lerna? maybe?)
-- Add support for hapticActuators in firefox (seems to work on some VR gamepads apparently, need to get my hands on some)
-- Add a 3d example using [threejs](https://github.com/mrdoob/three.js/) or [whitestorm](https://github.com/WhitestormJS/whitestorm.js) or [playcanvas](https://github.com/playcanvas/engine)
-  - It should have a gamepad config menu for showcasing a more conventional button rebinding UI
-  - It should also store in the sessionStorage the module config and on refresh restore it
-  - It should also offer a "RESET" button for these module configs
+  requestAnimationFrame(update);
+}
+
+requestAnimationFrame(update);
+```
+
+Call `poll()` at the beginning of a game-owned update loop for the lowest and most predictable input latency. If your application does not already have a loop, pass `onPoll` and call `start()` instead:
+
+```ts
+const joymap = createJoymap({
+  autoConnect: true,
+  onPoll: () => {
+    if (isJustPressed(player1.getButton('start'))) {
+      openMenu();
+    }
+  },
+});
+
+joymap.addController(player1);
+joymap.start();
+
+// Later:
+joymap.stop();
+```
+
+## Core Concepts
+
+Joymap has two public runtime primitives: a `Joymap` polls the browser and coordinates physical devices, while a `Controller` maps one physical gamepad to logical inputs for one player.
+
+### Joymap
+
+Create a Joymap instance with `createJoymap(options?)`:
+
+```ts
+const joymap = createJoymap({
+  autoConnect: true,
+  onPoll: () => updateGamepadInput(),
+});
+```
+
+`JoymapOptions` supports:
+
+- `autoConnect?: boolean` assigns each unassigned controller to an unused gamepad when one is available. The default is `false`.
+- `onPoll?: () => void` runs after every poll, including the poll where the final gamepad disconnects. The default is a no-op.
+
+A `Joymap` exposes:
+
+- `addController(controller)` registers a controller and returns it. Registering the same controller again has no effect.
+- `removeController(controller)` destroys and unregisters a controller. It returns whether the controller was registered.
+- `clearControllers()` destroys and unregisters every controller.
+- `getControllers()` returns a readonly snapshot of the registered controllers.
+- `getGamepads()` returns the readonly list of connected, valid browser `Gamepad` objects from the latest poll.
+- `getUnusedGamepadIndex()` returns the first connected gamepad index that is not assigned to a controller.
+- `getUnusedGamepadIndexes()` returns every connected gamepad index that is not assigned to a controller.
+- `poll()` samples the browser Gamepad API, updates every controller, and invokes `onPoll`.
+- `start()` polls with `requestAnimationFrame`. It is idempotent and automatically resumes when a gamepad connects.
+- `stop()` stops automatic polling immediately, including when called from `onPoll`.
+
+### Controllers
+
+Create a controller with `createController(options?)`:
+
+```ts
+const controller = createController({
+  buttonThreshold: 0.2,
+  gamepadIndex: 0,
+  stickDeadzone: 0.2,
+});
+```
+
+`ControllerOptions` supports:
+
+- `buttonThreshold?: number` sets the button press threshold in the inclusive range `[0, 1]`. The default is `0.2`.
+- `buttonReleaseThreshold?: number` sets the lower release threshold used for button hysteresis. The default is `buttonThreshold - 0.05`, clamped to `0`.
+- `stickDeadzone?: number` sets the radial stick press deadzone in the inclusive range `[0, 1]`. The default is `0.2`.
+- `stickReleaseDeadzone?: number` sets the lower release deadzone used for stick hysteresis. The default is `stickDeadzone - 0.05`, clamped to `0`.
+- `clampThreshold?: boolean` returns zero values for inputs below their active threshold. The default is `true`.
+- `rescaleSticks?: boolean` rescales radial stick output after the deadzone so it transitions from zero and still reaches full magnitude. The default is `false`.
+- `gamepadIndex?: number` reserves a non-negative `Gamepad.index` for this controller.
+
+Thresholds must be finite values between `0` and `1`. Release thresholds cannot exceed their corresponding press thresholds.
+
+## Controller Assignment
+
+Joymap identifies live controller slots by `Gamepad.index`. `Gamepad.id` is descriptive product metadata and is not guaranteed to be unique. The [Gamepad specification](https://www.w3.org/TR/gamepad/) allows a disconnected index to be reused by the next gamepad that connects, whether it is the same physical device or a different one.
+
+```ts
+controller.assign(2);
+
+controller.getGamepadIndex(); // 2
+controller.isConnected(); // false until gamepad 2 is observed in a poll
+
+joymap.addController(controller);
+joymap.poll();
+
+controller.isConnected(); // true when gamepad 2 is connected
+controller.getGamepad(); // the live Gamepad, or null
+```
+
+An assignment remains reserved when its gamepad disconnects. If that index becomes available again, the gamepad occupying the slot is assigned to the same player. Call `unassign()` to release the slot. When `autoConnect` is enabled, an unassigned controller can receive another unused gamepad during the next poll.
+
+Controller assignment APIs:
+
+- `assign(gamepadIndex)` reserves a non-negative gamepad index.
+- `unassign()` disconnects the current gamepad and releases its assignment.
+- `getGamepadIndex()` returns the assigned index or `null`.
+- `getGamepad()` returns the currently connected browser `Gamepad` or `null`.
+- `isConnected()` reports whether the assigned gamepad was present during the latest poll.
+
+## Reading Inputs
+
+Joymap installs the standard browser mapping only when `gamepad.mapping === 'standard'`. Its built-in logical buttons are `A`, `B`, `X`, `Y`, `L1`, `L2`, `L3`, `R1`, `R2`, `R3`, `dpadUp`, `dpadDown`, `dpadLeft`, `dpadRight`, `select`, `start`, and `home`. The built-in sticks are `L` and `R`.
+
+Nonstandard gamepads require explicit mappings. Missing inputs and disconnected controllers return independent neutral results instead of throwing.
+
+### Buttons
+
+```ts
+const button = controller.getButton('A');
+// {
+//   justChanged: boolean,
+//   pressed: boolean,
+//   type: 'button',
+//   value: number,
+// }
+
+const { A, B } = controller.getButtons('A', 'B');
+const allButtons = controller.getAllButtons();
+```
+
+- `getButton(name)` returns one `ButtonResult`.
+- `getButtons(...names)` returns the requested results keyed by name.
+- `getAllButtons()` returns every currently mapped button. Its result is partial because a controller may be disconnected or nonstandard.
+
+`pressed` combines the browser's native `GamepadButton.pressed` state with Joymap's analog threshold and hysteresis. `value` is the highest value among the mapped physical buttons. `justChanged` is true for exactly one Joymap poll when `pressed` changes.
+
+### Sticks
+
+```ts
+const stick = controller.getStick('L');
+// {
+//   inverts: readonly boolean[],
+//   justChanged: boolean,
+//   pressed: boolean,
+//   type: 'stick',
+//   value: number[],
+// }
+
+const { L, R } = controller.getSticks('L', 'R');
+const allSticks = controller.getAllSticks();
+```
+
+- `getStick(name)` returns one `StickResult`.
+- `getSticks(...names)` returns the requested results keyed by name.
+- `getAllSticks()` returns every currently mapped stick. Its result is partial because a controller may be disconnected or nonstandard.
+
+Stick significance is radial. When multiple physical sticks are grouped under one name, Joymap averages the active sticks.
+
+### Transitions
+
+`isJustPressed(input)` and `isJustReleased(input)` work with button or stick results and safely accept `undefined`:
+
+```ts
+if (isJustPressed(controller.getButton('A'))) {
+  jump();
+}
+
+if (isJustReleased(controller.getButton('R2'))) {
+  stopCharging();
+}
+```
+
+Reading the same input multiple times during one poll returns the same transition semantics. A transition expires on the next Joymap poll.
+
+## Mapping Inputs
+
+Logical input names must be nonempty and alphanumeric. Physical indexes must be non-negative integers.
+
+### Buttons
+
+Map one physical button or group multiple buttons under one logical name:
+
+```ts
+controller.setButton('jump', [0]);
+controller.setButton('confirm', [0, 1]);
+```
+
+- `setButton(name, indexes)` creates or replaces a button mapping.
+- `swapButtons(firstName, secondName)` swaps two existing mappings.
+- `getButtonIndexes(...names)` returns the deduplicated physical indexes for the named mappings.
+
+A grouped button is pressed when any mapped physical button is pressed.
+
+### Sticks
+
+Each inner array describes the axes of one physical stick. Multiple inner arrays group multiple physical sticks into one logical result:
+
+```ts
+controller.setStick('move', [[0, 1]]);
+controller.setStick(
+  'combined',
+  [
+    [0, 1],
+    [2, 3],
+  ],
+  [false, true],
+);
+```
+
+- `setStick(name, indexGroups, inverts?)` creates or replaces a stick mapping.
+- `invertSticks(inverts, ...names)` replaces the inversion flags for existing sticks.
+- `swapSticks(firstName, secondName, includeInverts?)` swaps two stick mappings. Inversion flags remain with their logical names unless `includeInverts` is true.
+- `getStickIndexes(...names)` returns the deduplicated physical axis groups for the named mappings.
+
+All index groups in one stick mapping must contain the same nonzero number of axes. The inversion array must match that axis count.
+
+## Rebinding
+
+Joymap can wait for sustained physical input and report the matching indexes:
+
+```ts
+controller.listenButton((indexes) => controller.setButton('jump', indexes), 1, {
+  waitFor: [2, 'polls'],
+});
+
+controller.listenAxis((indexGroups) => controller.setStick('move', indexGroups), 2, {
+  consecutive: true,
+  waitFor: [100, 'ms'],
+});
+```
+
+- `listenButton(callback, quantity?, options?)` listens for a number of active buttons. The default quantity is `1` and default wait is one poll.
+- `listenAxis(callback, quantity?, options?)` listens for a number of active axes. The default quantity is `2` and default wait is `100ms`.
+- `cancelListen()` cancels the current button or axis listener.
+
+Listener options are:
+
+- `allowOffset?: boolean` permits a group to begin at an index that is not aligned to its quantity. The default is `true`.
+- `consecutive?: boolean` requires adjacent indexes. The default is `false` for buttons and `true` for axes.
+- `waitFor?: [number, 'polls' | 'ms']` requires the input to remain active for a poll count or monotonic duration.
+
+The higher-level helpers apply a captured binding directly:
+
+- `buttonBindOnPress(name, callback, allowDuplication?)` binds a logical button. By default, an existing physical mapping is swapped rather than duplicated. The callback receives the previous logical name when one existed.
+- `stickBindOnPress(name, callback, allowDuplication?)` provides the equivalent behavior for sticks.
+
+## Rumble
+
+Rumble effects use the browser's `GamepadHapticActuator` when available:
+
+```ts
+controller.addRumble({
+  duration: 120,
+  strongMagnitude: 0.8,
+  weakMagnitude: 0.3,
+});
+```
+
+An effect object supports:
+
+- `duration: number` in milliseconds.
+- `strongMagnitude?: number` in the range `[0, 1]`.
+- `weakMagnitude?: number` in the range `[0, 1]`.
+
+Pass an array to create a timeline. Numbers represent pauses in milliseconds:
+
+```ts
+controller.addRumble(
+  [{ duration: 50, strongMagnitude: 1 }, 100, { duration: 80, weakMagnitude: 0.5 }],
+  'damage',
+);
+```
+
+Named channels run concurrently and their magnitudes are combined:
+
+- `addRumble(effectOrTimeline, channelName?)` starts or replaces a channel. The default channel name is `default`.
+- `stopRumble(channelName?)` stops and resets a channel.
+- `isRumbleSupported(gamepad?)` returns whether the supplied or connected gamepad supports rumble, or `null` when neither exists.
+
+Rumble actuator promise rejections are handled internally. Queues are released when controllers are unassigned, removed, or physically disconnected.
+
+## Public Types
+
+Joymap exports these public TypeScript types:
+
+- `Joymap` and `JoymapOptions`
+- `Controller` and `ControllerOptions`
+- `Button`, `Stick`, `ButtonResult`, `StickResult`, and `InputResult`
+- `Effect` and `EffectObject`
+- `RawGamepad`, `CustomGamepad`, and `GamepadSnapshots`
+
+`RawGamepad` is an alias for the browser's `Gamepad` type. `CustomGamepad` and `GamepadSnapshots` describe Joymap's normalized snapshot representation and are primarily useful for integrations and tooling.
+
+## Migrating from v4
+
+Joymap 5 replaces the old module terminology with a single controller abstraction. There are no compatibility aliases.
+
+| v4                            | v5                                                 |
+| ----------------------------- | -------------------------------------------------- |
+| `createQueryModule()`         | `createController()`                               |
+| `QueryModule`                 | `Controller`                                       |
+| `BaseParams`                  | `ControllerOptions`                                |
+| `joymap.addModule(module)`    | `joymap.addController(controller)`                 |
+| `joymap.removeModule(module)` | `joymap.removeController(controller)`              |
+| `joymap.clearModules()`       | `joymap.clearControllers()`                        |
+| `joymap.getModules()`         | `joymap.getControllers()`                          |
+| `getUnusedPadIndex()`         | `getUnusedGamepadIndex()`                          |
+| `getUnusedPadIndexes()`       | `getUnusedGamepadIndexes()`                        |
+| `padIndex`                    | `gamepadIndex`                                     |
+| `controller.connect(index)`   | `controller.assign(index)`                         |
+| `controller.getPadIndex()`    | `controller.getGamepadIndex()`                     |
+| `controller.getPadId()`       | `controller.getGamepad()?.id ?? null`              |
+| `controller.disconnect()`     | `controller.unassign()` for an intentional release |
+
+The deprecated `padId`, shared `threshold`, `getUnusedPadId()`, and `getUnusedPadIds()` APIs were removed. Use unique gamepad indexes, and configure `buttonThreshold` and `stickDeadzone` separately.
+
+`createBaseModule`, `BaseModule`, `AnyModule`, and the mapper registry were also removed from the public API. A mapper was only a stored function receiving the controller; replace it with an ordinary function:
+
+```ts
+// v4
+controller.setMapper('accept', (module) => module.getButton('A'));
+const accept = controller.getMapper('accept');
+
+// v5
+const getAccept = (controller: Controller) => controller.getButton('A');
+const accept = getAccept(controller);
+```
+
+`isConnected()` now means that a live gamepad was observed during the latest poll. Assigning an index does not report a physical connection until Joymap sees that device. Use `getGamepadIndex()` to inspect assignment and `getGamepad()` for live device metadata.
+
+`getAllButtons()` and `getAllSticks()` now correctly return partial records because mappings may be absent before the first standard gamepad poll or on nonstandard devices.
+
+A typical migration looks like this:
+
+```ts
+import { createController, createJoymap, isJustPressed, type Controller } from '@nkzw/joymap';
+
+const controller: Controller = createController();
+const joymap = createJoymap({ autoConnect: true });
+
+joymap.addController(controller);
+joymap.poll();
+
+if (isJustPressed(controller.getButton('A'))) {
+  accept();
+}
+```
+
+## Development
+
+Install dependencies and run the full validation suite with Vite+:
+
+```bash
+vp install
+vp run test:all
+```
+
+Run the local Signal Strike gamepad demo with:
+
+```bash
+vp run demo
+```
+
+Run performance and retained-memory benchmarks with:
+
+```bash
+vp run benchmark:all
+```
