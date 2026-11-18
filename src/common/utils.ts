@@ -1,4 +1,4 @@
-import { ButtonResult, CustomGamepad, PressState, RawGamepad, StickResult } from '../types.ts';
+import type { ButtonResult, CustomGamepad, PressState, RawGamepad, StickResult } from '../types.ts';
 
 // dev-helper type: expands object types one level deep
 export type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;

@@ -1,6 +1,6 @@
-import createBaseModule, { BaseModule } from './baseModule/base.ts';
+import createBaseModule, { type BaseModule } from './baseModule/base.ts';
 import { buttonMap, mapValues, stickMap } from './common/utils.ts';
-import { ButtonResult, ControllerOptions, InputResult, StickResult } from './types.ts';
+import type { ButtonResult, ControllerOptions, InputResult, StickResult } from './types.ts';
 
 type ControllerLifecycle = Pick<BaseModule['module'], 'destroy' | 'disconnect' | 'update'>;
 
@@ -36,8 +36,13 @@ const createEmptyButton = (): ButtonResult => ({
 });
 
 export default function createController(params: ControllerOptions = {}): Controller {
-  const { module: baseModule, state } = createBaseModule(params);
+  return createControllerFromModule(createBaseModule(params));
+}
 
+export function createControllerFromModule({
+  module: baseModule,
+  state,
+}: BaseModule): ControllerInternals {
   const getButtonResult = (inputName: string) => {
     const button = state.buttons[inputName];
     return button

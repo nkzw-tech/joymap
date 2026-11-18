@@ -1,4 +1,7 @@
 import { vi } from 'vite-plus/test';
+import createBaseModule from '../src/baseModule/base.ts';
+import { createControllerFromModule } from '../src/controller.ts';
+import type { ControllerOptions } from '../src/types.ts';
 
 type GamepadOptions = {
   axes?: ReadonlyArray<number>;
@@ -94,4 +97,9 @@ export function installWindow() {
       callback?.(0);
     },
   };
+}
+
+export function createInspectableController(options?: ControllerOptions) {
+  const base = createBaseModule(options);
+  return { module: createControllerFromModule(base), state: base.state };
 }

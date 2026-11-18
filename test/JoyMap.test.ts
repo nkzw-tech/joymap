@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
-import createBaseModule from '../src/baseModule/base.ts';
 import { clearRumble, hasRumbleChannels } from '../src/baseModule/rumble.ts';
 import createController, { Controller } from '../src/controller.ts';
 import createJoymap from '../src/JoyMap.ts';
@@ -7,6 +6,7 @@ import {
   createButtons,
   createGamepad,
   createHapticActuator,
+  createInspectableController,
   installNavigator,
   installWindow,
 } from './fixtures.ts';
@@ -70,9 +70,9 @@ describe('JoyMap polling and assignment', () => {
     const gamepads: Array<Gamepad | null> = [createGamepad({ id: 'manual', index: 4 })];
     const getGamepads = installNavigator(gamepads);
     const onPoll = vi.fn();
-    const { module, state } = createBaseModule({ gamepadIndex: 4 });
+    const { module, state } = createInspectableController({ gamepadIndex: 4 });
     const joymap = createJoymap({ onPoll });
-    joymap.addController(module as unknown as Controller);
+    joymap.addController(module);
 
     joymap.poll();
     expect(module.isConnected()).toBe(true);
@@ -88,11 +88,11 @@ describe('JoyMap polling and assignment', () => {
 
   it('reconnects a disconnected controller when its assigned gamepad returns', () => {
     installNavigator([createGamepad({ id: 'returning', index: 7 })]);
-    const { module } = createBaseModule({ gamepadIndex: 7 });
+    const { module } = createInspectableController({ gamepadIndex: 7 });
     module.disconnect();
     const assign = vi.spyOn(module, 'assign');
     const joymap = createJoymap({ onPoll: vi.fn() });
-    joymap.addController(module as unknown as Controller);
+    joymap.addController(module);
 
     joymap.poll();
     expect(assign).not.toHaveBeenCalled();
@@ -101,10 +101,10 @@ describe('JoyMap polling and assignment', () => {
 
   it('leaves disconnected controllers alone when auto-connect is disabled', () => {
     installNavigator([]);
-    const { module } = createBaseModule();
+    const { module } = createInspectableController();
     const disconnect = vi.spyOn(module, 'disconnect');
     const joymap = createJoymap({ onPoll: vi.fn() });
-    joymap.addController(module as unknown as Controller);
+    joymap.addController(module);
 
     joymap.poll();
     expect(disconnect).not.toHaveBeenCalled();
@@ -115,10 +115,10 @@ describe('JoyMap polling and assignment', () => {
       createGamepad({ id: 'first', index: 0 }),
       createGamepad({ id: 'second', index: 1 }),
     ]);
-    const first = createBaseModule();
-    const second = createBaseModule();
+    const first = createInspectableController();
+    const second = createInspectableController();
     const joymap = createJoymap({ autoConnect: true, onPoll: vi.fn() });
-    joymap.addController(first.module as unknown as Controller);
+    joymap.addController(first.module);
 
     joymap.poll();
     expect(first.module.getGamepadIndex()).toBe(0);
@@ -127,7 +127,7 @@ describe('JoyMap polling and assignment', () => {
     expect(joymap.getUnusedGamepadIndex()).toBe(1);
     expect(joymap.getUnusedGamepadIndexes()).toEqual([1]);
 
-    joymap.addController(second.module as unknown as Controller);
+    joymap.addController(second.module);
     expect(second.module.getGamepadIndex()).toBe(1);
     joymap.poll();
     expect(second.module.getGamepad()?.id).toBe('second');
@@ -166,11 +166,11 @@ describe('JoyMap polling and assignment', () => {
         timestamp: 10,
       }),
     ]);
-    const first = createBaseModule({ gamepadIndex: 4 });
-    const second = createBaseModule({ gamepadIndex: 4 });
+    const first = createInspectableController({ gamepadIndex: 4 });
+    const second = createInspectableController({ gamepadIndex: 4 });
     const joymap = createJoymap({ onPoll: vi.fn() });
-    joymap.addController(first.module as unknown as Controller);
-    joymap.addController(second.module as unknown as Controller);
+    joymap.addController(first.module);
+    joymap.addController(second.module);
 
     joymap.poll();
 
@@ -187,9 +187,9 @@ describe('JoyMap polling and assignment', () => {
       createGamepad({ axes: [0, 0], buttons: createButtons([0]), timestamp: 1 }),
     ];
     installNavigator(gamepads);
-    const { module, state } = createBaseModule({ gamepadIndex: 0 });
+    const { module, state } = createInspectableController({ gamepadIndex: 0 });
     const joymap = createJoymap({ onPoll: vi.fn() });
-    joymap.addController(module as unknown as Controller);
+    joymap.addController(module);
 
     joymap.poll();
     const firstSnapshot = state.pad;
@@ -227,7 +227,7 @@ describe('JoyMap polling and assignment', () => {
     installNavigator(gamepads);
     const module = createController({ gamepadIndex: 0 });
     const joymap = createJoymap({ onPoll: vi.fn() });
-    joymap.addController(module as unknown as Controller);
+    joymap.addController(module);
 
     joymap.poll();
     expect(module.getButton('A')).toMatchObject({ justChanged: true, pressed: true, value: 1 });
@@ -246,7 +246,7 @@ describe('JoyMap polling and assignment', () => {
     installNavigator([createGamepad({ axes, timestamp: 0 })]);
     const module = createController({ gamepadIndex: 0 });
     const joymap = createJoymap();
-    joymap.addController(module as unknown as Controller);
+    joymap.addController(module);
 
     joymap.poll();
     expect(module.getStick('L').value[0]).toBe(0.5);
@@ -263,7 +263,7 @@ describe('JoyMap polling and assignment', () => {
     installNavigator(gamepads);
     const module = createController({ gamepadIndex: 0 });
     const joymap = createJoymap({ onPoll: vi.fn() });
-    joymap.addController(module as unknown as Controller);
+    joymap.addController(module);
 
     joymap.poll();
     gamepads.length = 0;
@@ -281,9 +281,9 @@ describe('JoyMap polling and assignment', () => {
       createGamepad({ index: 9, vibrationActuator: actuator }),
     ];
     installNavigator(gamepads);
-    const { module } = createBaseModule({ gamepadIndex: 9 });
+    const { module } = createInspectableController({ gamepadIndex: 9 });
     const joymap = createJoymap({ onPoll: vi.fn() });
-    joymap.addController(module as unknown as Controller);
+    joymap.addController(module);
 
     joymap.poll();
     module.addRumble({ duration: 100, strongMagnitude: 1 });
@@ -300,22 +300,22 @@ describe('JoyMap polling and assignment', () => {
 
   it('exposes controllers and destroys removed and cleared controllers', () => {
     installNavigator([]);
-    const first = createBaseModule();
-    const second = createBaseModule();
+    const first = createInspectableController();
+    const second = createInspectableController();
     const firstDestroy = vi.spyOn(first.module, 'destroy');
     const secondDestroy = vi.spyOn(second.module, 'destroy');
     const joymap = createJoymap({ onPoll: vi.fn() });
 
-    expect(joymap.addController(first.module as unknown as Controller)).toBe(first.module);
-    expect(joymap.addController(first.module as unknown as Controller)).toBe(first.module);
-    joymap.addController(second.module as unknown as Controller);
+    expect(joymap.addController(first.module)).toBe(first.module);
+    expect(joymap.addController(first.module)).toBe(first.module);
+    joymap.addController(second.module);
     expect(joymap.getControllers()).toEqual([first.module, second.module]);
     const controllers = joymap.getControllers() as Array<Controller>;
     controllers.length = 0;
     expect(joymap.getControllers()).toEqual([first.module, second.module]);
 
-    expect(joymap.removeController(first.module as unknown as Controller)).toBe(true);
-    expect(joymap.removeController(first.module as unknown as Controller)).toBe(false);
+    expect(joymap.removeController(first.module)).toBe(true);
+    expect(joymap.removeController(first.module)).toBe(false);
     expect(firstDestroy).toHaveBeenCalledOnce();
     expect(first.module.getGamepadIndex()).toBeNull();
     expect(joymap.getControllers()).toEqual([second.module]);
@@ -378,10 +378,8 @@ describe('JoyMap animation loop', () => {
   it('does not schedule when stop is called during the initial onPoll', () => {
     installNavigator([createGamepad()]);
     const browser = installWindow();
-    const state: { joymap?: ReturnType<typeof createJoymap> } = {};
-    const onPoll = vi.fn(() => state.joymap?.stop());
+    const onPoll = vi.fn((): void => joymap.stop());
     const joymap = createJoymap({ onPoll });
-    state.joymap = joymap;
 
     joymap.start();
     expect(browser.callbacks.size).toBe(0);
@@ -392,14 +390,12 @@ describe('JoyMap animation loop', () => {
   it('does not reschedule when stop is called during a frame onPoll', () => {
     installNavigator([createGamepad()]);
     const browser = installWindow();
-    const state: { joymap?: ReturnType<typeof createJoymap> } = {};
-    const onPoll = vi.fn(() => {
+    const onPoll = vi.fn((): void => {
       if (onPoll.mock.calls.length === 2) {
-        state.joymap?.stop();
+        joymap.stop();
       }
     });
     const joymap = createJoymap({ onPoll });
-    state.joymap = joymap;
 
     joymap.start();
     browser.runFrame(1);
@@ -463,9 +459,9 @@ describe('JoyMap animation loop', () => {
   it('connects otherwise unassigned controllers during start', () => {
     installNavigator([createGamepad({ id: 'start-pad' })]);
     installWindow();
-    const { module } = createBaseModule();
+    const { module } = createInspectableController();
     const joymap = createJoymap({ autoConnect: true, onPoll: vi.fn() });
-    joymap.addController(module as unknown as Controller);
+    joymap.addController(module);
 
     joymap.start();
     expect(module.getGamepadIndex()).toBe(0);
@@ -475,10 +471,10 @@ describe('JoyMap animation loop', () => {
   it('cannot assign a controller during start when no gamepad is available', () => {
     installNavigator([]);
     installWindow();
-    const { module } = createBaseModule();
+    const { module } = createInspectableController();
     const assign = vi.spyOn(module, 'assign');
     const joymap = createJoymap({ autoConnect: true, onPoll: vi.fn() });
-    joymap.addController(module as unknown as Controller);
+    joymap.addController(module);
 
     joymap.start();
     expect(assign).not.toHaveBeenCalled();

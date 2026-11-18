@@ -44,35 +44,35 @@ const buttonIndexes: Record<ButtonName, number> = {
   Y: 3,
 };
 
-const keyBindings: Partial<Record<string, ButtonName>> = {
-  Backspace: 'select',
-  Enter: 'start',
-  KeyC: 'R2',
-  KeyE: 'R1',
-  KeyF: 'L3',
-  KeyG: 'R3',
-  KeyH: 'home',
-  KeyI: 'Y',
-  KeyJ: 'A',
-  KeyK: 'B',
-  KeyQ: 'L1',
-  KeyU: 'X',
-  KeyZ: 'L2',
-  ShiftLeft: 'B',
-  ShiftRight: 'B',
-  Space: 'A',
-};
+const keyBindings = new Map<string, ButtonName>([
+  ['Backspace', 'select'],
+  ['Enter', 'start'],
+  ['KeyC', 'R2'],
+  ['KeyE', 'R1'],
+  ['KeyF', 'L3'],
+  ['KeyG', 'R3'],
+  ['KeyH', 'home'],
+  ['KeyI', 'Y'],
+  ['KeyJ', 'A'],
+  ['KeyK', 'B'],
+  ['KeyQ', 'L1'],
+  ['KeyU', 'X'],
+  ['KeyZ', 'L2'],
+  ['ShiftLeft', 'B'],
+  ['ShiftRight', 'B'],
+  ['Space', 'A'],
+]);
 
-const movementBindings: Partial<Record<string, ButtonName>> = {
-  ArrowDown: 'dpadDown',
-  ArrowLeft: 'dpadLeft',
-  ArrowRight: 'dpadRight',
-  ArrowUp: 'dpadUp',
-  KeyA: 'dpadLeft',
-  KeyD: 'dpadRight',
-  KeyS: 'dpadDown',
-  KeyW: 'dpadUp',
-};
+const movementBindings = new Map<string, ButtonName>([
+  ['ArrowDown', 'dpadDown'],
+  ['ArrowLeft', 'dpadLeft'],
+  ['ArrowRight', 'dpadRight'],
+  ['ArrowUp', 'dpadUp'],
+  ['KeyA', 'dpadLeft'],
+  ['KeyD', 'dpadRight'],
+  ['KeyS', 'dpadDown'],
+  ['KeyW', 'dpadUp'],
+]);
 
 const getElement = <ElementType extends HTMLElement>(id: string) => {
   const element = document.querySelector<ElementType>(`#${id}`);
@@ -131,7 +131,7 @@ joymap.addController(controller);
 
 const game = new SignalStrikeGame();
 
-const shouldPreventDefault = (code: string) => code in keyBindings || code in movementBindings;
+const shouldPreventDefault = (code: string) => keyBindings.has(code) || movementBindings.has(code);
 
 window.addEventListener('keydown', (event) => {
   if (shouldPreventDefault(event.code)) {
@@ -188,7 +188,7 @@ const emptyButton = (): ButtonResult => ({
 const getKeyboardButtons = () => {
   const result = new Set<ButtonName>();
   for (const code of activeKeys) {
-    const inputName = keyBindings[code] ?? movementBindings[code];
+    const inputName = keyBindings.get(code) ?? movementBindings.get(code);
     if (inputName) {
       result.add(inputName);
     }

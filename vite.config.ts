@@ -1,4 +1,4 @@
-import nkzw from '@nkzw/oxlint-config';
+import nkzw from '@nkzw/oxlint-config/with-sorting';
 import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
@@ -30,7 +30,7 @@ export default defineConfig({
       'benchmark:all': {
         cache: false,
         command: [
-          'vp test bench benchmark',
+          'vp test bench benchmark --reporter=verbose --experimental.viteModuleRunner=false',
           'vp pack',
           'node --expose-gc benchmark/controller-memory.mjs',
         ],

@@ -164,8 +164,8 @@ describe('rumble channels', () => {
   });
 
   it('registers and releases owners without channels', () => {
-    const owner = {};
-    const remainingOwner = {};
+    const owner = Symbol();
+    const remainingOwner = Symbol();
     const gamepad = createGamepad({ index: 108 });
 
     requestRumbleRefresh(108);
@@ -180,7 +180,7 @@ describe('rumble channels', () => {
   });
 
   it('handles rejected reset promises while releasing an owner', async () => {
-    const owner = {};
+    const owner = Symbol();
     const actuator = createHapticActuator();
     actuator.reset.mockRejectedValue(new Error('reset failed'));
     const gamepad = createGamepad({ index: 108, vibrationActuator: actuator });

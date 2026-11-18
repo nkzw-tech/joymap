@@ -3,10 +3,11 @@ import {
   isButtonSignificant,
   isConsecutive,
   isMappedButtonPressed,
+  mapValues,
   mappedStickIsSignificant,
   nameIsValid,
 } from '../common/utils.ts';
-import {
+import type {
   Button,
   ControllerOptions,
   CustomGamepad,
@@ -125,8 +126,8 @@ function updateListenOptions(
   return listenOptions;
 }
 
-function getDefaultButtons(): Record<string, Button> {
-  const buttons: Record<string, Button> = {
+function getDefaultButtons() {
+  return mapValues((indexes) => Object.freeze(indexes), {
     A: [0],
     B: [1],
     dpadDown: [13],
@@ -144,11 +145,7 @@ function getDefaultButtons(): Record<string, Button> {
     start: [9],
     X: [2],
     Y: [3],
-  };
-  for (const inputName of Object.keys(buttons)) {
-    buttons[inputName] = Object.freeze(Array.from(buttons[inputName]));
-  }
-  return buttons;
+  });
 }
 
 const freezeIndexes = (indexes: ReadonlyArray<number>) => Object.freeze(Array.from(indexes));
@@ -161,7 +158,7 @@ const createStick = (
   inverts: Object.freeze(Array.from(inverts)),
 });
 
-function getDefaultSticks(): Record<string, Stick> {
+function getDefaultSticks() {
   return {
     L: createStick([[0, 1]]),
     R: createStick([[2, 3]]),
@@ -216,7 +213,7 @@ export default function createModule(params: ControllerOptions = {}) {
   let connected = false;
   const customButtonNames = new Set<string>();
   const customStickNames = new Set<string>();
-  const rumbleOwner = {};
+  const rumbleOwner = Symbol();
 
   const state: BaseState = {
     buttonPressStates: {},

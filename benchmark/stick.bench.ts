@@ -1,6 +1,6 @@
-import { bench, describe } from 'vite-plus/test';
+import { describe, test } from 'vite-plus/test';
 import { stickMap } from '../src/common/utils.ts';
-import { CustomGamepad } from '../src/types.ts';
+import type { CustomGamepad } from '../src/types.ts';
 
 const previous: CustomGamepad = {
   axes: [0.1, 0.1, 0.2, 0.2, 0, 0],
@@ -24,31 +24,35 @@ const samples: Array<CustomGamepad> = Array.from({ length: 256 }, (_, index) => 
 let sampleIndex = 0;
 
 describe('stick mapping', () => {
-  bench('standard stick', () => {
-    const result = stickMap(
-      samples[sampleIndex & 255],
-      previous,
-      [[0, 1]],
-      [false, false],
-      0.2,
-      true,
-    );
-    sampleIndex += result.value[0] === 2 ? 2 : 1;
+  test('standard stick', async ({ bench }) => {
+    await bench('standard stick', () => {
+      const result = stickMap(
+        samples[sampleIndex & 255],
+        previous,
+        [[0, 1]],
+        [false, false],
+        0.2,
+        true,
+      );
+      sampleIndex += result.value[0] === 2 ? 2 : 1;
+    }).run();
   });
 
-  bench('three grouped sticks', () => {
-    const result = stickMap(
-      samples[sampleIndex & 255],
-      previous,
-      [
-        [0, 1],
-        [2, 3],
-        [4, 5],
-      ],
-      [true, false],
-      0.2,
-      true,
-    );
-    sampleIndex += result.value[0] === 2 ? 2 : 1;
+  test('three grouped sticks', async ({ bench }) => {
+    await bench('three grouped sticks', () => {
+      const result = stickMap(
+        samples[sampleIndex & 255],
+        previous,
+        [
+          [0, 1],
+          [2, 3],
+          [4, 5],
+        ],
+        [true, false],
+        0.2,
+        true,
+      );
+      sampleIndex += result.value[0] === 2 ? 2 : 1;
+    }).run();
   });
 });

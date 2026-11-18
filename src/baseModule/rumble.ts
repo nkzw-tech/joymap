@@ -1,8 +1,8 @@
-import { Effect, RawGamepad, StrictEffect } from '../types.ts';
+import type { Effect, RawGamepad, StrictEffect } from '../types.ts';
 
 type GamepadIndex = number;
 type ChannelName = string;
-export type RumbleOwner = object;
+type RumbleOwner = symbol;
 
 type RumbleChannel = {
   cursor: number;
@@ -22,7 +22,7 @@ type RumbleController = {
 
 export const MAX_DURATION = 5000;
 const defaultChannel = 'default';
-const defaultOwner: RumbleOwner = {};
+const defaultOwner: RumbleOwner = Symbol();
 const allControllers = new Map<GamepadIndex, RumbleController>();
 
 const createController = (): RumbleController => ({
@@ -64,6 +64,7 @@ export function makeEffectStrict(effect: Effect | number): StrictEffect {
 
 export function applyRumble(pad: RawGamepad, effect: StrictEffect) {
   if (!pad.vibrationActuator) {
+    // eslint-disable-next-line prefer-promise-reject-errors -- Preserve the unsupported-gamepad rejection reason.
     return Promise.reject(
       `Joymap rumble applyRumble: Gamepad ${pad.id} does not support haptic feedback`,
     );

@@ -1,7 +1,7 @@
 import { clearRumble, resetRumble } from './baseModule/rumble.ts';
 import { getRawGamepads } from './common/utils.ts';
-import { Controller, ControllerInternals } from './controller.ts';
-import { CustomGamepad, GamepadSnapshots, JoymapOptions, RawGamepad } from './types.ts';
+import type { Controller, ControllerInternals } from './controller.ts';
+import type { CustomGamepad, GamepadSnapshots, JoymapOptions, RawGamepad } from './types.ts';
 
 type MutableGamepadSnapshot = Omit<CustomGamepad, 'axes'> & { axes: Array<number> };
 

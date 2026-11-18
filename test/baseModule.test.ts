@@ -539,9 +539,8 @@ describe('rumble integration', () => {
     expect(actuator.playEffect).toHaveBeenCalledOnce();
     expect(actuator.reset).toHaveBeenCalledOnce();
 
-    const actuatorWithoutReset = {
-      playEffect: vi.fn(async () => 'complete' as GamepadHapticsResult),
-    } as unknown as GamepadHapticActuator;
+    const actuatorWithoutReset = createHapticActuator();
+    Reflect.deleteProperty(actuatorWithoutReset, 'reset');
     const moduleWithoutReset = createBaseModule().module;
     moduleWithoutReset.update(createGamepad({ vibrationActuator: actuatorWithoutReset }));
     moduleWithoutReset.addRumble({ duration: 10, strongMagnitude: 1 });
