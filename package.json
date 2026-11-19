@@ -1,6 +1,6 @@
 {
   "name": "@nkzw/joymap",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "description": "A modern Gamepad API wrapper and input mapping library.",
   "keywords": [
     "gamepad",
