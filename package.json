@@ -42,15 +42,14 @@
     "@nkzw/eslint-plugin": "^2.0.0",
     "@nkzw/oxlint-config": "^3.0.0",
     "@vitest/coverage-v8": "catalog:",
-    "tsrs": "0.25.0-ts7.1.0-beta",
-    "typescript": "^6.0.3",
+    "tsrs": "7.1.0-beta.tsrs2",
     "vite": "catalog:",
     "vite-plus": "catalog:"
   },
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.24.0",
+      "version": "12.21.0",
       "onFail": "download"
     }
   }
